@@ -1,5 +1,5 @@
 test_that("sets R0 according to pick_uadj", {
-  params <- build_default_params()
+  params <- params9(date_start="2020-01-01", date_end="2020-01-02")
   params_ref <- copy(params)
 
   params <- with_R0(params, 2.5, scenario_id = 1)

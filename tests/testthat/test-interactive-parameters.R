@@ -53,10 +53,10 @@ build_default_params <- function() {
 test_that("sets standard school terms", {
   # Do pipeline
   params <- build_default_params() %>%
-    with_standard_school_terms
+    with_uk_school_terms
 
   # Check pipeline
-  terms <- get_school_terms()
+  terms <- get_school_terms_uk()
 
   # duration of simulation time in days
   duration <- as.numeric(ymd(params$time1) - ymd(params$date0))

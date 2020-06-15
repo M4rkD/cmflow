@@ -40,6 +40,17 @@ with_u_adjustment <- function(params, adj) {
   return(params)
 }
 
+#' Apply selected R0 to parameters
+#'
+#' @param params params simulation configuration data
+#' @param R0 numeric value of R0
+#' @param scenario_id the covid scneario to select. A random one will be selected if ommitted or NULL.
+#'
+#' @return params, with modified $u and $y for each population. The value of R0 is also added to $info for each population
+#' @examples
+#' params9() %>% with_R0(2.5) %>% simulate()
+#'
+#' @export
 with_R0 <- function(params, R0, scenario_id = NULL) {
   u_adj <- pick_uadj(R0, scenario_id)
 
@@ -71,17 +82,31 @@ Note: I expect this could be done in a far simpler way."
   map_int(1:186, ~ as.integer(sum(parameters$pop[[.x]]$size)))
 }
 
-classify_regions_uk <- function() {
-  locations <- covidm::cm_uk_locations("UK", 3)
+#' Classification by region of UK locations
+#'
+#' @param locations list of location, as returned by cm_uk_locations. All of the UK at the UA level by default.
+#'
+#' @return list of logical vectors, each of which selectes the UAs in that region
+#
+#' @examples
+#' classify_regions_uk()$wales
+#' classify_regions_uk()$london
+#'
+#' @export
+classify_regions_uk <- function(locations = NULL) {
+
+  if(is.null(locations)) {
+    locations <- covidm::cm_uk_locations("UK", 3)
+  }
 
   list(
-    london = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Geography1 %like% "London"],
-    england = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^E" & !(Geography1 %like% "London")],
-    wales = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^W"],
-    scotland = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^S"],
-    nireland = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^N"],
-    westmid = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Name == "West Midlands (Met County)"],
-    cumbria = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Name == "Cumbria"]
+    london = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Geography1 %like% "London"],
+    england = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^E" & !(Geography1 %like% "London")],
+    wales = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^W"],
+    scotland = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^S"],
+    nireland = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^N"],
+    westmid = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Name == "West Midlands (Met County)"],
+    cumbria = covidm:::cm_structure_UK[match(str_sub(locations, 6), Name), Name == "Cumbria"]
   )
 }
 
@@ -92,7 +117,18 @@ get_school_terms_uk <- function() {
   )
 }
 
-with_uk_school_terms <- function(params, school_terms) {
+#' Classification by region of UK locations
+#'
+#' @param params params simulation configuration data
+#'
+#' @return params, with school terms applied
+#
+#' @examples
+#' params9() %>% with_uk_school_terms %>% run_simulation
+#'
+#' @export
+with_uk_school_terms <- function(params) {
+  school_terms <- get_school_terms_uk()
   iv <- cm_iv_build(params)
   cm_iv_set(iv, school_terms$close, school_terms$reopen, contact = c(1, 1, 0, 1, 1, 1, 0, 1, 1), trace_school = 2)
   params <- cm_iv_apply(params, iv)
@@ -134,7 +170,19 @@ create_gran_matrix <- function(pop) {
   mat
 }
 
-build_params <- function(date_start, date_end, locations = NULL) {
+#' Build default parameters from contact matrices
+#'
+#' @param date_start simulation start date
+#' @param date_end simulation end date
+#' @param locations list of location to simlulate, whole of UK at UA level if NULL or omitted.
+#'
+#' @return default params
+#
+#' @examples
+#' params() %>% ...
+#'
+#' @export
+params <- function(date_start, date_end, locations = NULL) {
   if (is.null(locations)) {
     locations <- covidm::cm_uk_locations("UK", 3)
   }
@@ -159,6 +207,20 @@ run_simulation <- function(params, run = 1, n = 1) {
   result
 }
 
+#' Build 9-matrix default parameters from contact matrices
+#'
+#' Additional matrices are added for elderly shielding and child-grandparent contact.
+#'
+#' @param date_start simulation start date
+#' @param date_end simulation end date
+#' @param locations list of location to simlulate, whole of UK at UA level if NULL or omitted.
+#'
+#' @return default params (with additional matrices)
+#
+#' @examples
+#' params9() %>% ...
+#'
+#' @export
 params9 <- function(date_start, date_end, locations = NULL) {
   "Build parameters and split into 9 matrices"
 
@@ -170,7 +232,7 @@ params9 <- function(date_start, date_end, locations = NULL) {
     locations <- covidm::cm_uk_locations("UK", 3)
   }
 
-  parameters <- build_params(date_start, date_end, locations)
+  parameters <- params(date_start, date_end, locations)
 
   # Split off the elderly (70+, age groups 15 and 16) so their contact matrices can be manipulated separately
   parameters <- cm_split_matrices_ex_in(parameters, 15)
@@ -251,10 +313,38 @@ with_validate <- function(params) {
   return(params)
 }
 
-with_seeding <- function(params, seed_matrices, translation = trans_seed_format, dist_ages = NULL) {
-  "Set population seeding from seed_matrix into positions defined by idxs.
+#' Apply seeding
+#'
+#' Applies a seeding to params, based on a number of seeding options
+#'
+#' @param params params simulation configuration data
+#' @param seed_matrices one of the allowed values of seeding. If a numeric vector,
+#' then the numeric vector is applied to each population as a seeding vector.
+#' This is a vector of the length number of day to seed, and each value is the number
+#' of seeds for that day.
+#' If seed_matrices is a matrix, then each row is treated as a seeding vector for the
+#' corresponding population at that index.
+#' If a function, then the function will be called with two arguments,
+#' params and population index, and should return the seeding vector for the
+#' populatoin in the second parameter.
+#' @param translation a function used to translate the seeding vector to the
+#' format used by the covidm package. Set this to unity to set the seeding directly in
+#' the format used by covidm. This is a numeric vector of one entry per seed,
+#' with the value specifying the day on which that seed occured.
+#' @param dist_ages distribution of age seeds to use for all populations. If null, everyone
+#' in a fixed age range are seeded equally.
 
-seed_matrix is a N-days x N-population matrix, with values specifying the number of seeds on that day."
+#' @param params params simulation configuration data
+#'
+#' @return default params (with seeds set)
+#
+#' @examples
+#' params9() %>% with_seeding(c(1,2,3))
+#' params9() %>% with_seeding(function(params, ipop) { c(1,2,3) })
+#' params9() %>% with_seeding(seed_matrix)
+#'
+#' @export
+with_seeding <- function(params, seed_matrices, translation = trans_seed_format, dist_ages = NULL) {
 
   if (is.null(dist_ages)) {
     age_min <- 25
@@ -287,10 +377,6 @@ seed_matrix is a N-days x N-population matrix, with values specifying the number
 
 with_store <- function(params) {
   .debug_params <<- params
-}
-
-with_standard_school_terms <- function(params) {
-  with_school_terms(params, get_school_terms())
 }
 
 with_multiply_field <- function(params, fields, factor) {
@@ -397,51 +483,105 @@ with_run <- function(irun, .vars, .func) {
   with_sweep(.vars[irun, ], func)
 }
 
-with_sweep <- function(.vars, .func) {
-  "Run a parameter sweep over every combination of members of the list .vars, using pmap, and return a list of the results."
+#' Sweep over parameters
+#'
+#' Given a data frame of parameters sets (.vars) and a function (.func),
+#' call the function once per data frame row, passing the field
+#' values as named arguments to .func.
+#' Func should return a set of params for one simulation.
+#' Run the simulation with these params, calling action with the params and result each time.
+#' Must be the last entry function in the chain
+#'
+#' @param .vars data frame of values to run
+#' @param .func function of params, and the values of fields in
+#' the data frame. Should return a set of params for the run.
+#' @param action an action to perform on each run, should
+#' return the value for with_sweep to return
+#'
+#' @return list of result of action function on the result
+#' of the simulation. This will be the simulation results
+#' and error information by default.
+#
+#' @examples
+#' params9() %>% with_vars(df, function(params, R0) {
+#'                                        with_R0(paras, R0)
+#'                                      })
+#'
+#' @export
+with_vars_run <- function(params,
+                          .vars,
+                          .func = function(params, ...) params,
+                          action = ac_run) {
+
   future_pmap(.vars, function(...) {
-    run_simulation(.func(...))
+    # Compute params by calling .func
+    params <- .func(params, ...)
+
+    # Set sweep vars
+    params$info$sweep_vars <- list(...)
+
+    # call the action
+    action(params)
   })
 }
 
-with_sweep_saving <- function(.vars, .func, output_dir) {
-  "Run a parameter sweep over every combination of members of the list .vars, using pmap, and return a list of the results."
-  print("start")
-
-  ifelse(!dir.exists(file.path(getwd(), output_dir)), dir.create(file.path(getwd(), output_dir)), FALSE)
-
-  print("created directory...")
-
-  future_pmap_chr(.vars, function(...) {
-    result_uuid <- system("uuidgen", intern = T)
-    result_filepath <- file.path(output_dir, paste0(result_uuid, "-result.rds"))
-    params_filepath <- file.path(output_dir, paste0(result_uuid, "-params.rds"))
-
-    qsave(list(...), params_filepath)
-
-    # simulation
-    result <- safely(run_simulation)(.func(...))
-    result$iteration_params <- list(...)
-
-    qsave(result, result_filepath)
-    rm(result)
-    gc()
-
-    result_uuid
-  })
+ac_run <- function(params) {
+  result <- safely(run_simulation)(params)
+  result$sweep_vars <- params$info$sweep_vars
 }
 
-with_collect_dynamics <- function(results) {
-  "Bind a list of simulation results into a single tibble"
-  i <- 0
-  reduce(results, function(agg, res) {
-    i <<- i + 1
-    res$dynamics$run <- i
-    rbind(agg, res$dynamics)
-  }, .init = tibble())
+
+#' Save simulation results to directory
+#'
+#' @param .vars data frame of values to run
+#' @param .func function of params, and the values of fields in
+#' the data frame. Should return a set of params for the run.
+#' @param action an action to perform on each run, should
+#' return the value for with_sweep to return
+#'
+#' @return list of result of action function on the result
+#' of the simulation. This will be the simulation results
+#' and error information by default.
+#
+#' @examples
+#' params9() %>% with_vars(df, function(params, R0) {
+#'                                        with_R0(paras, R0)
+#'                                      })
+#'
+#' @export
+ac_save_fs <- function(output_dir) {
+  result <- ac_run(params)
+
+  save_file_to_uuid_location(output_dir, vars, result)
 }
 
-with_sweep_collecting <- function(...) {
-  "Run a sweep, and collect/bind the dynamics."
-  with_collect_dynamics(with_sweep(...))
+save_file_to_uuid_location <- function(output_dir, result) {
+  full_dir <- file.path(getwd(), output_dir)
+
+  ifelse(!dir.exists(full_dir), dir.create(full_dir), FALSE)
+
+  result_uuid <- system("uuidgen", intern = T)
+
+  result_filepath <- file.path(output_dir, paste0(result_uuid, "-result.rds"))
+  vars_filepath <- file.path(output_dir, paste0(result_uuid, "-params.rds"))
+
+  qsave(vars, vars_filepath)
+  qsave(result, result_filepath)
+
+  result_uuid
 }
+
+# ac_collect_dynamics <- function(vars, results) {
+#   "Bind a list of simulation results into a single tibble"
+#   i <- 0
+#   reduce(results, function(agg, res) {
+#     i <<- i + 1
+#     res$dynamics$run <- i
+#     rbind(agg, res$dynamics)
+#   }, .init = tibble())
+# }
+#
+# with_sweep_collecting <- function(...) {
+#   "Run a sweep, and collect/bind the dynamics."
+#   with_collect_dynamics(with_sweep(...))
+# }
