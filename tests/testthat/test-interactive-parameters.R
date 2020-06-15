@@ -93,3 +93,24 @@ test_that("sets standard school terms", {
   expect_equal(c(0, idx_of_reopen + 1), no_iv)
 })
 
+default_seed_ages <- c(0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0)
+
+test_that("sets seeding", {
+  params <- build_default_params()
+  params_ref <- copy(params)
+
+  input <- c(1,0,3,0,1)
+
+  output <- c(1,3,3,3,5)
+  output_dist_seeds <- rep(1, 16)
+
+  params <- with_seeding(params, input)
+
+  for (ipop in seq_along(params$pop)) {
+    params_ref$pop[[ipop]]$seed_times <- output
+    # check that default seeding is used
+    params_ref$pop[[ipop]]$dist_seed_ages <- default_seed_ages
+  }
+
+  expect_equal(params_ref, params)
+})

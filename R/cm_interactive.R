@@ -266,6 +266,8 @@ seed_matrix is a N-days x N-population matrix, with values specifying the number
       seed_matrices[, ipop]
     } else if (class(seed_matrices) == "function") {
       seed_matrices(params, ipop)
+    } else if (is.vector(seed_matrices) & is.numeric(seed_matrices)) {
+      seed_matrices
     } else {
       stop("Unknown type for seed matrix")
     }
