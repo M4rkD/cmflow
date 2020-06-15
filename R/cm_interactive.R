@@ -2,6 +2,7 @@
 # future::plan(future::sequential)
 
 # Function to compute the adjustment to R
+# TODO - untested. note that tests for R0 depend on this.
 pick_uadj <- function(R0, scenario_id = NULL) {
   parametersUK1 <- cm_parameters_SEI3R(cm_uk_locations("UK", 0),
     dE = cm_delay_gamma(4.0, 4.0, t_max = 60, t_step = 0.25)$p,
@@ -105,6 +106,7 @@ save_run_result <- function(R, ipop, run) {
   qsave(run, save_as)
 }
 
+# TODO - missing tests
 create_gran_matrix <- function(pop) {
   "Create a grandparent matrix, by combining other matrices."
 
