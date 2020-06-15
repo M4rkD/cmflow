@@ -1,29 +1,5 @@
-library(stringr)
-library(tidyverse)
-library(furrr)
-library(qs)
-
-cm_path <- paste0(getwd(), "/covidm/")
-source(paste0(cm_path, "/R/covidm.R"))
-
-# Additional sources
-source(paste0(cm_path, "/R/covidm_seeding.R"))
-
-# Load global variables
-cm_matrices <- readRDS(paste0(cm_path, "/data/all_matrices.rds"))
-cm_populations <- readRDS(paste0(cm_path, "/data/wpp2019_pop2020.rds"))
-cm_structure_UK <- readRDS(paste0(cm_path, "/data/structure_UK.rds"))
-covid_scenario <- qread(file.path(cm_path, "../data/2-linelist_symp_fit_fIa0.5.qs"))
-
-# Names and indices of unitary authoritaries
-Auth <- as.list(cm_uk_locations("uk", 3))
-names(Auth) <- gsub("\\||UK|\\s|,", "", Auth)
-
-iAuth <- as.list(1:length(Auth))
-names(iAuth) <- names(Auth)
-
-plan(multicore)
-# plan(sequential)
+# future::plan(future::multicore)
+# future::plan(future::sequential)
 
 # Function to compute the adjustment to R
 pick_uadj <- function(R0, scenario_id = NULL) {
@@ -34,6 +10,8 @@ pick_uadj <- function(R0, scenario_id = NULL) {
     dIa = cm_delay_gamma(5.0, 4.0, t_max = 60, t_step = 0.25)$p,
     deterministic = F
   )
+
+  covid_scenario <- cm_age_vary_symp_rate__symp_fit_fIa0.5
 
   # if scenario_id is NULL, then reset this
   if (is.null(scenario_id)) {
@@ -76,8 +54,8 @@ calc_population_sizes <- function(populations) {
 get_population_sizes <- function(level) {
   "Function to compute population sizes.
 Note: I expect this could be done in a far simpler way."
-  locations <- cm_uk_locations("UK", 3)
-  parameters <- cm_parameters_SEI3R(locations,
+  locations <- covidm::cm_uk_locations("UK", 3)
+  parameters <- covidm::cm_parameters_SEI3R(locations,
     dE = cm_delay_gamma(4.0, 4.0, t_max = 60, t_step = 0.25)$p, # 6.5 day serial interval.
     dIp = cm_delay_gamma(1.5, 4.0, t_max = 60, t_step = 0.25)$p, # 1.5 days w/o symptoms
     dIs = cm_delay_gamma(3.5, 4.0, t_max = 60, t_step = 0.25)$p, # 5 days total of infectiousness
@@ -90,16 +68,16 @@ Note: I expect this could be done in a far simpler way."
 }
 
 classify_regions <- function() {
-  locations <- cm_uk_locations("UK", 3)
+  locations <- covidm::cm_uk_locations("UK", 3)
 
   list(
-    london = cm_structure_UK[match(str_sub(locations, 6), Name), Geography1 %like% "London"],
-    england = cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^E" & !(Geography1 %like% "London")],
-    wales = cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^W"],
-    scotland = cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^S"],
-    nireland = cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^N"],
-    westmid = cm_structure_UK[match(str_sub(locations, 6), Name), Name == "West Midlands (Met County)"],
-    cumbria = cm_structure_UK[match(str_sub(locations, 6), Name), Name == "Cumbria"]
+    london = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Geography1 %like% "London"],
+    england = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^E" & !(Geography1 %like% "London")],
+    wales = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^W"],
+    scotland = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^S"],
+    nireland = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Code %like% "^N"],
+    westmid = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Name == "West Midlands (Met County)"],
+    cumbria = covidm::cm_structure_UK[match(str_sub(locations, 6), Name), Name == "Cumbria"]
   )
 }
 
@@ -153,7 +131,7 @@ create_gran_matrix <- function(pop) {
 
 build_params <- function(date_start, date_end, locations = NULL) {
   if (is.null(locations)) {
-    locations <- cm_uk_locations("UK", 3)
+    locations <- covidm::cm_uk_locations("UK", 3)
   }
 
   cm_parameters_SEI3R(locations,
@@ -179,8 +157,12 @@ run_simulation <- function(params, run = 1, n = 1) {
 params9 <- function(date_start, date_end, locations = NULL) {
   "Build parameters and split into 9 matrices"
 
+  if(date_end < date_start) {
+    stop("Attempt to build parameters with date_end before date_start")
+  }
+
   if (is.null(locations)) {
-    locations <- cm_uk_locations("UK", 3)
+    locations <- covidm::cm_uk_locations("UK", 3)
   }
 
   parameters <- build_params(date_start, date_end, locations)
