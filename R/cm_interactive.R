@@ -42,7 +42,10 @@ with_u_adjustment <- function(params, adj) {
 with_R0 <- function(params, R0, scenario_id = NULL) {
   u_adj <- pick_uadj(R0, scenario_id)
 
-  params$R0 <- R0
+  for (i in seq_along(params$pop)) {
+    params$pop[[i]]$info$R0 <- R0
+  }
+
   with_u_adjustment(params, u_adj)
 }
 
