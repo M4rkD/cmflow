@@ -95,7 +95,7 @@ test_that("sets standard school terms", {
 
 default_seed_ages <- c(0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0)
 
-test_that("sets seeding", {
+test_that("sets seeding from matrix", {
   params <- build_default_params()
   params_ref <- copy(params)
 
@@ -111,6 +111,56 @@ test_that("sets seeding", {
     # check that default seeding is used
     params_ref$pop[[ipop]]$dist_seed_ages <- default_seed_ages
   }
+
+  expect_equal(params_ref, params)
+})
+
+test_that("sets seeding distribution", {
+  params <- build_default_params()
+  params_ref <- copy(params)
+
+  input <- c(1,0,3,0,1)
+
+  output <- c(1,3,3,3,5)
+  dist_seeds <- rep(1, 16)
+
+  params <- with_seeding(params, input, dist_ages = dist_seeds)
+
+  for (ipop in seq_along(params$pop)) {
+    params_ref$pop[[ipop]]$seed_times <- output
+    # check that default seeding is used
+    params_ref$pop[[ipop]]$dist_seed_ages <- dist_seeds
+  }
+
+  expect_equal(params_ref, params)
+})
+
+test_that("sets seeding distribution", {
+  params <- build_default_params()
+  params_ref <- copy(params)
+
+  input <- c(1,0,3,0,1)
+  alt_input <- c(3,4,0,0,7)
+
+  # build a matrix
+  idx <- 22
+  all_input <- matrix(rep(input,186), ncol=186)
+  all_input[,idx] <- alt_input
+
+  output <- c(1,3,3,3,5)
+  alt_output <- c(1,1,1,2,2,2,2,5,5,5,5,5,5,5)
+
+  dist_seeds <- rep(1, 16)
+
+  params <- with_seeding(params, all_input)
+
+  for (ipop in seq_along(params$pop)) {
+    params_ref$pop[[ipop]]$seed_times <- output
+    # check that default seeding is used
+    params_ref$pop[[ipop]]$dist_seed_ages <- default_seed_ages
+  }
+
+  params_ref$pop[[idx]]$seed_times <- alt_output
 
   expect_equal(params_ref, params)
 })
