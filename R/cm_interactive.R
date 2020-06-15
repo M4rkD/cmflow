@@ -11,7 +11,7 @@ pick_uadj <- function(R0, scenario_id = NULL) {
     deterministic = F
   )
 
-  covid_scenario <- cm_age_vary_symp_rate__symp_fit_fIa0.5
+  covid_scenario <- covidm:::cm_age_vary_symp_rate__symp_fit_fIa0.5
 
   # if scenario_id is NULL, then reset this
   if (is.null(scenario_id)) {
