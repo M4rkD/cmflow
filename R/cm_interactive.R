@@ -70,7 +70,7 @@ Note: I expect this could be done in a far simpler way."
   map_int(1:186, ~ as.integer(sum(parameters$pop[[.x]]$size)))
 }
 
-classify_regions <- function() {
+classify_regions_uk <- function() {
   locations <- covidm::cm_uk_locations("UK", 3)
 
   list(
@@ -84,14 +84,14 @@ classify_regions <- function() {
   )
 }
 
-get_school_terms <- function() {
+get_school_terms_uk <- function() {
   list(
     close = c("2020-2-16", "2020-4-05", "2020-5-24", "2020-7-22", "2020-10-25", "2020-12-20", "2021-02-14", "2021-04-01", "2021-05-30", "2021-07-25"),
     reopen = c("2020-2-22", "2020-4-18", "2020-5-30", "2020-9-01", "2020-10-31", "2021-01-02", "2021-02-20", "2021-04-17", "2021-06-05", "2021-09-01")
   )
 }
 
-with_school_terms <- function(params, school_terms) {
+with_uk_school_terms <- function(params, school_terms) {
   iv <- cm_iv_build(params)
   cm_iv_set(iv, school_terms$close, school_terms$reopen, contact = c(1, 1, 0, 1, 1, 1, 0, 1, 1), trace_school = 2)
   params <- cm_iv_apply(params, iv)
