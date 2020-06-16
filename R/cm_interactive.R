@@ -364,9 +364,9 @@ with_seeding <- function(params, seed_matrices, translation = trans_seed_format,
   params$pop <- lapply(params$pop, `[[<-`, "dist_seed_ages", dist_ages)
 
   ith <- function(ipop) {
-    if (class(seed_matrices) == "matrix") {
+    if (is.matrix(seed_matrices)) {
       seed_matrices[, ipop]
-    } else if (class(seed_matrices) == "function") {
+    } else if (is.function(seed_matrices)) {
       seed_matrices(params, ipop)
     } else if (is.vector(seed_matrices) & is.numeric(seed_matrices)) {
       seed_matrices
