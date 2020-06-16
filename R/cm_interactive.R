@@ -545,8 +545,10 @@ with_vars_run <- function(params,
 
 #' @export
 ac_run <- function(params) {
-  result <- safely(run_simulation)(params)
-  result$sweep_vars <- params$info$sweep_vars
+  out <- safely(run_simulation)(params)
+  result <- out$result
+  result$error <- out$error
+  result
 }
 
 
