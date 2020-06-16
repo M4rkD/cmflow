@@ -3,7 +3,7 @@ library(lubridate)
 test_that("can build UK params from dates", {
   date_start = "2020-01-01"
   date_end = "2020-01-02"
-  params = covidmflow::params9(date_start = date_start,
+  params = cmflow::params9(date_start = date_start,
                                date_end = date_end)
   expect_equal(params$date0, date_start)
   expect_equal(params$time1, date_end)
@@ -22,7 +22,7 @@ test_that("refuses to build params when end date before start date", {
 test_that("can build correctly named single UA with parameter", {
   date_start = "2020-01-01"
   date_end = "2020-01-02"
-  params = covidmflow::params9(date_start = date_start,
+  params = cmflow::params9(date_start = date_start,
                                date_end = date_end,
                                UAuth$Swansea)
 
@@ -33,7 +33,7 @@ test_that("can build correctly named single UA with parameter", {
 test_that("can build correctly named double UA with parameter", {
   date_start = "2020-01-01"
   date_end = "2020-01-02"
-  params = covidmflow::params9(date_start = date_start,
+  params = cmflow::params9(date_start = date_start,
                                date_end = date_end,
                                c(UAuth$Swansea, UAuth$Cardiff))
 
@@ -46,7 +46,7 @@ build_default_params <- function() {
   date_start = "2020-01-01"
   date_end = "2021-01-01"
 
-  params = covidmflow::params9(date_start = date_start,
+  params = cmflow::params9(date_start = date_start,
                                date_end = date_end)
 }
 

@@ -1,4 +1,4 @@
-Package: covidmflow
+Package: cmflow
 Title: An interactive interface to the covidm package
 Version: 0.0.0.9000
 Authors@R: 
@@ -8,8 +8,7 @@ Authors@R:
            email = "mark.dawson@swansea.ac.uk",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+License: use_gpl3_license()
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

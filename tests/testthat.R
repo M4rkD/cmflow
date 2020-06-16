@@ -1,4 +1,4 @@
 library(testthat)
-library(covidmflow)
+library(cmflow)
 
-test_check("covidmflow")
+test_check("cmflow")
