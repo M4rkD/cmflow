@@ -111,68 +111,58 @@ Particularly useful when setting u and rates to zero."
 # Seeders
 #--------------------------------------------
 
-forcemulti <- function(...) {
-  map(..., force)
-}
-
 # Exponential growth curve for seeding
+#' @export
 seeder_source_exp_growth_curve <- function(init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = NULL, ndays = 67) {
-  forcemulti(init, total, expgrowth, p_ht, ht_day, ndays)
-
-  function(params_unused, ipop_unused) {
-    weights <- rep(0, ndays)
-    weights[init] <- 1
-    for (i in seq(init + 1, ndays)) {
-      weights[i] <- weights[i - 1] * expgrowth
-    }
-    curve <- weights * total * (1 - p_ht) / sum(weights)
-
-    if(!is.null(ht_day)) {
-      if(ht_day > ndays) {
-        stop("Half term pulse can't happen after the end of seeding")
-      }
-
-      curve[ht_day] <- curve[ht_day] + total * p_ht
-    }
-
-    return(curve)
+  weights <- rep(0, ndays)
+  weights[init] <- 1
+  for (i in seq(init + 1, ndays)) {
+    weights[i] <- weights[i - 1] * expgrowth
   }
+  curve <- weights * total * (1 - p_ht) / sum(weights)
+
+  if(!is.null(ht_day)) {
+    if(ht_day > ndays) {
+      stop("Half term pulse can't happen after the end of seeding")
+    }
+
+    curve[ht_day] <- curve[ht_day] + total * p_ht
+  }
+
+  return(curve)
 }
 
-seeder_weight_by_population <- function() {
+#' @export
+seeder_weight_by_population <- function(curve, pop, ipop) {
   "Return seeding matrix."
-  function(curve, params, ipop) {
-    pop_sizes <- calc_population_sizes(params$pop)
-    fractional_pop <- pop_sizes / sum(pop_sizes)
+  pop_sizes <- calc_population_sizes(pop)
+  fractional_pop <- pop_sizes / sum(pop_sizes)
 
-    curve * fractional_pop[[ipop]]
-  }
+  curve * fractional_pop[[ipop]]
 }
 
-seeder_sample_poisson <- function(seed) {
-  force(seed)
+# variable used to store state by seeder_sample_poisson function
+.seeder_sample_poisson__last_seed <- NULL
 
-  function(curve, params, ipop) {
+#' @export
+seeder_sample_poisson <- function(curve, seed = NULL, prevent_repeat_seeds=TRUE) {
+  if(!is.null(seed)) {
+    # check not called repeatedly with the same seed
+    last_seed <- .seeder_sample_poisson__last_seed
+    if(!is.null(last_seed) & last_seed == seed & prevent_repeat_seeds) {
+      stop("Repeatedly using the same sampling for poisson seeds. Are you sure you're not using the same seeding for every population in a simulation? This can cause issues.")
+    }
+    .seeder_sample_poisson__last_seed <<- seed
+
     set.seed(seed)
-    rpois(length(curve), curve)
   }
+
+  rpois(length(curve), curve)
 }
 
-seeder_chain <- function(source, ...) {
-  "Takes in a list of seeders (functions of three arguments), and calls them in a chain, threading the curve, params and ipop."
-  function(params, ipop) {
-    curve <- reduce(list(...), function(curve, fun) {
-      fun(curve, params, ipop)
-    }, .init = source(params, ipop))
-  }
-}
-
-seeder_default_exp <- function(init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = 48, ndays = 67, seed = NULL) {
-  forcemulti(init, total, expgrowth, p_ht, ht_day, ndays)
-
-  seeder_chain(
-    seeder_source_exp_growth_curve(init, total, expgrowth, p_ht, ht_day, ndays),
-    seeder_weight_by_population(),
-    seeder_sample_poisson(seed)
-  )
+#' @export
+seeder_default_exp <- function(params, ipop, init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = 48, ndays = 67, seed = NULL) {
+  seeder_source_exp_growth_curve(init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = 48, ndays = 67) %>%
+  seeder_weight_by_population(params$pop, ipop) %>%
+  seeder_sample_poisson(seed)
 }

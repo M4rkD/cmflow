@@ -294,13 +294,20 @@ Note, this does not mutate the input parameters."
   params
 }
 
-map_pop <- function(params, var, func) {
+fetch_in_pop <- function(params, var, func) {
+  map(params$pop, var)
+}
+
+modify_in_pop <- function(params, var, func) {
   params$pop <- map(params$pop, function(p) p[var] <- func(p[var]))
 
   return(params)
 }
 
 with_validate <- function(params) {
+
+  covidm::cm_check_parameters(params)
+
   if (length(map(params$pop, ~ .x$seed_times)) != length(params$pop)) {
     stop("Validation failed: Check the values for params$pop[[i]]$seed_times")
   }
@@ -404,6 +411,15 @@ filter_pop <- function(params, pop_idxs) {
 
 
 
+#' Apply default health info
+#'
+#' @param params params simulation configuration data
+#'
+#' @return params, with applied defauly health info
+#' @examples
+#' params9() %>% with_default_health_info
+#'
+#' @export
 with_default_health_info <- function(params) {
   probs <- fread(
     "Age,Prop_symptomatic,IFR,Prop_inf_hosp,Prop_inf_critical,Prop_critical_fatal,Prop_noncritical_fatal,Prop_symp_hospitalised,Prop_hospitalised_critical
@@ -511,20 +527,23 @@ with_run <- function(irun, .vars, .func) {
 with_vars_run <- function(params,
                           .vars,
                           .func = function(params, ...) params,
-                          action = ac_run) {
+                          .action = ac_run) {
 
   future_pmap(.vars, function(...) {
     # Compute params by calling .func
     params <- .func(params, ...)
 
+    validate_params(params)
+   
     # Set sweep vars
     params$info$sweep_vars <- list(...)
 
     # call the action
-    action(params)
+    .action(params)
   })
 }
 
+#' @export
 ac_run <- function(params) {
   result <- safely(run_simulation)(params)
   result$sweep_vars <- params$info$sweep_vars
@@ -549,10 +568,10 @@ ac_run <- function(params) {
 #'                                      })
 #'
 #' @export
-ac_save_fs <- function(output_dir) {
+ac_save_run_fs <- function(output_dir, params) {
   result <- ac_run(params)
 
-  save_file_to_uuid_location(output_dir, vars, result)
+  save_file_to_uuid_location(output_dir, result)
 }
 
 save_file_to_uuid_location <- function(output_dir, result) {
