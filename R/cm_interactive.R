@@ -533,7 +533,7 @@ with_vars_run <- function(params,
     # Compute params by calling .func
     params <- .func(params, ...)
 
-    validate_params(params)
+    with_validate(params)
    
     # Set sweep vars
     params$info$sweep_vars <- list(...)
