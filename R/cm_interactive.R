@@ -529,7 +529,13 @@ with_vars_run <- function(params,
                           .func = function(params, ...) params,
                           .action = ac_run) {
 
+  # Just in case...
+  force(params)
+
   future_pmap(.vars, function(...) {
+    # I don't think this is necessary here..
+    force(params)
+
     # Compute params by calling .func
     params <- .func(params, ...)
 
