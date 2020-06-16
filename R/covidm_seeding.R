@@ -141,24 +141,29 @@ seeder_weight_by_population <- function(curve, pop, ipop) {
   curve * fractional_pop[[ipop]]
 }
 
-# variable used to store state by seeder_sample_poisson function
-.seeder_sample_poisson__last_seed <- NULL
+seeder_sample_poisson__functional <- function() {
+  last_seed <- NULL
 
-#' @export
-seeder_sample_poisson <- function(curve, seed = NULL, prevent_repeat_seeds=TRUE) {
-  if(!is.null(seed)) {
-    # check not called repeatedly with the same seed
-    last_seed <- .seeder_sample_poisson__last_seed
-    if(!is.null(last_seed) & last_seed == seed & prevent_repeat_seeds) {
-      stop("Repeatedly using the same sampling for poisson seeds. Are you sure you're not using the same seeding for every population in a simulation? This can cause issues.")
+  # prevents repeat seeds, as these could cause issues if same seed used for
+  # every population
+  function(curve, seed = NULL, prevent_repeat_seeds=TRUE) {
+    if(!is.null(seed)) {
+      # check not called repeatedly with the same seed
+      if(!is.null(last_seed) && last_seed == seed && prevent_repeat_seeds) {
+        stop("Repeatedly using the same sampling for poisson seeds. Are you sure you're not using the same seeding for every population in a simulation? This could cause issues.")
+      }
+      last_seed <<- seed
+
+      set.seed(seed)
     }
-    .seeder_sample_poisson__last_seed <<- seed
 
-    set.seed(seed)
+    rpois(length(curve), curve)
   }
-
-  rpois(length(curve), curve)
 }
+
+#' This is a closure in order to preserve the last seed, so that errors can be thrown if repeated
+#' @export
+seeder_sample_poisson <- seeder_sample_poisson__functional()
 
 #' @export
 seeder_default_exp <- function(params, ipop, init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = 48, ndays = 67, seed = NULL) {
