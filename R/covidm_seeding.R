@@ -133,9 +133,9 @@ seeder_source_exp_growth_curve <- function(init = 10, total = 100, expgrowth = 1
 }
 
 #' @export
-seeder_weight_by_population <- function(curve, pop, ipop) {
+seeder_weight_by_population <- function(curve, params, ipop) {
   "Return seeding matrix."
-  pop_sizes <- calc_population_sizes(pop)
+  pop_sizes <- calc_population_sizes(params$pop)
   fractional_pop <- pop_sizes / sum(pop_sizes)
 
   curve * fractional_pop[[ipop]]
@@ -168,6 +168,6 @@ seeder_sample_poisson <- seeder_sample_poisson__functional()
 #' @export
 seeder_default_exp <- function(params, ipop, init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = 48, ndays = 67, seed = NULL) {
   seeder_source_exp_growth_curve(init = 10, total = 100, expgrowth = 1.05, p_ht = 0.5, ht_day = 48, ndays = 67) %>%
-  seeder_weight_by_population(params$pop, ipop) %>%
+  seeder_weight_by_population(params, ipop) %>%
   seeder_sample_poisson(seed)
 }
