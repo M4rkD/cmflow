@@ -546,7 +546,7 @@ with_vars_run <- function(params,
 
     # call the action
     .action(params)
-  })
+  }, .progress = TRUE)
 }
 
 #' @export
