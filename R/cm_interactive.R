@@ -200,7 +200,6 @@ params <- function(date_start, date_end, locations = NULL) {
 run_simulation <- function(params, run = 1, n = 1) {
   "Runs the simulation, setting the runtime."
   start_time <- Sys.time()
-  print(paste0("seeds: ", length(params$pop[[1]]$seed_times)))
   result <- cm_simulate(params, run, 0)
   end_time <- Sys.time()
   result$runtime_seconds <- end_time - start_time
