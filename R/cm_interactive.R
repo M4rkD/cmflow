@@ -315,8 +315,6 @@ with_validate <- function(params) {
     stop("Validation failed: Check the travel matrix size")
   }
 
-  print("Validation passed")
-
   return(params)
 }
 
@@ -539,8 +537,6 @@ with_vars_run <- function(params,
     # Compute params by calling .func
     params <- .func(params, ...)
 
-    with_validate(params)
-   
     # Set sweep vars
     params$info$sweep_vars <- list(...)
 
