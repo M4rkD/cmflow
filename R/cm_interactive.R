@@ -554,7 +554,8 @@ with_simulate <- function(params,
   } else {
     # ensure that every dataframe
     # has a run column
-    .vars$run <- 1:dim(.vars)[[1]]
+    .vars %<>% add_column(run=1:dim(.vars)[[1]],
+                          .before=names(.vars)[1])
 
     results <- future_pmap(.vars,
                            runner,
