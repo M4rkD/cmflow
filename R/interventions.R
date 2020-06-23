@@ -20,8 +20,7 @@ with_intervention <- function(params, start_date, end_date, ...) {
         stop("doubling up not tested")
       }
 
-      cm_iv_set(iv, ymd_start, ymd_end, contact = contact)
-      cm_iv_set(iv, ymd_start, ymd_end, trace_intervention = 2)
+      cm_iv_set(iv, ymd_start, ymd_end, ...)
 
       pop$iv <- iv
 
@@ -41,6 +40,35 @@ with_intervention <- function(params, start_date, end_date, ...) {
       params <- cm_iv_apply(params, iv, ipop)
     }
   }
+
+  return(params)
+}
+
+get_school_terms_uk <- function() {
+  list(
+    close = c("2020-2-16", "2020-4-05", "2020-5-24", "2020-7-22", "2020-10-25", "2020-12-20", "2021-02-14", "2021-04-01", "2021-05-30", "2021-07-25"),
+    reopen = c("2020-2-22", "2020-4-18", "2020-5-30", "2020-9-01", "2020-10-31", "2021-01-02", "2021-02-20", "2021-04-17", "2021-06-05", "2021-09-01")
+  )
+}
+
+#' Classification by region of UK locations
+#'
+#' @param params params simulation configuration data
+#'
+#' @return params, with school terms applied
+#
+#' @examples
+#' params9() %>% with_uk_school_terms %>% run_simulation
+#'
+#' @export
+with_uk_school_terms <- function(params) {
+  school_terms <- get_school_terms_uk()
+  school_contact <- c(1, 1, 0, 1, 1, 1, 0, 1, 1)
+  with_intervention(params,
+                    school_terms$close,
+                    school_terms$reopen,
+                    contact = school_contact,
+                    trace_school = 2)
 
   return(params)
 }
