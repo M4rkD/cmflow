@@ -525,7 +525,7 @@ with_simulate <- function(params,
                           output_dir,
                           .vars = NULL,
                           .func = NULL,
-                          db = TRUE) {
+                          overwrite = FALSE) {
 
   # params is used from this environment
   # of the runner function and the default
@@ -576,16 +576,7 @@ with_simulate <- function(params,
 
 
   # default output contains info on the runs
-  output <- list(runs = bind_rows(results))
-
-  if(db) {
-    create_database(output$runs, output_dir)
-
-    # return a tibble which references database
-    output$dynamics <- store_tbl(output_dir)
-  }
-
-  return(output)
+  bind_rows(results)
 }
 
 #' Return simulation results directly
