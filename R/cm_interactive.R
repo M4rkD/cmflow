@@ -530,15 +530,13 @@ with_simulate <- function(params,
   # of the runner function and the default
   # .func function
   force(params)
-  force(run)
-  force(model_seed)
 
   # If func is not hill
   if(!is.null(.vars) && is.null(.func)) {
     stop("Must provide .func if .vars is provided")
   }
  
-  runner <- function(...) {
+  runner <- function(run, ...) {
     # Compute params by calling .func
     params <- .func(params, ...)
 
@@ -550,18 +548,25 @@ with_simulate <- function(params,
     # seed every run with the index of the run
     result <- run_simulation_safely(params, run, model_seed = run)
 
-    save_file_to_uuid_location(output_dir, result, vars)
+    .save_file_to_uuid_location(output_dir, run, result, vars)
   }
 
   if(is.null(.vars)) {
     runner()
   } else {
+    # add_column requires a data frame, and vars is a function
+    # in default R
+    if(!is.data.frame(.vars)) {
+      stop(".vars should be a data frame")
+    }
+
     # ensure that every dataframe
     # has a run column. The runner function
     # depends on this. In particular, the run ID
     # is also used to seed simulation runs.
-    .vars %<>% add_column(run=1:dim(.vars)[[1]],
-                          .before=names(.vars)[1])
+    .vars <- add_column(.vars,
+                        run=1:dim(.vars)[[1]],
+                        .before=names(.vars)[1])
 
     results <- future_pmap(.vars,
                            runner,
@@ -580,14 +585,12 @@ run_simulation_safely <- function(params, run = 1, model_seed = 0) {
   result
 }
 
-save_file_to_uuid_location <- function(output_dir, result, vars) {
-  full_dir <- file.path(getwd(), output_dir)
+.save_file_to_uuid_location <- function(output_dir, run, result, vars) {
+  full_dir <- file.path(getwd(), output_dir, "results")
 
-  ifelse(!dir.exists(full_dir), dir.create(full_dir), FALSE)
+  ifelse(!dir.exists(full_dir), dir.create(full_dir, recursive = TRUE), FALSE)
 
-  result_uuid <- system("uuidgen", intern = T)
-
-  result_filepath <- file.path(output_dir, paste0(result_uuid, "-result.rds"))
+  result_filepath <- file.path(full_dir, paste0(run, ".rds"))
 
   qsave(result, result_filepath)
 
