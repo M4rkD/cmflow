@@ -530,6 +530,7 @@ with_simulate <- function(params,
   # params is used from this environment
   # of the runner function and the default
   # .func function
+  params <- .apply_schedule(params)
   force(params)
 
   # If func is not hill
