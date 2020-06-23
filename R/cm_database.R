@@ -4,6 +4,18 @@ store_dynamics <- function(conn, dynamics, run_id = NULL) {
   }
 
   dbWriteTable(conn, "dynamics", dynamics, overwrite = FALSE, append = TRUE)
+
+  # create an index for all columns if it doesn't exist
+  columns <- names(dynamics)
+  for(col in columns) {
+    done <- has_index_SQLite(conn, col)
+    if(!done) {
+      query <- sprintf("CREATE INDEX index_%s ON dynamics ('%s')", col, col)
+      dbExecute(conn, query)
+    }
+  }
+
+  return(TRUE)
 }
 
 #' @export
@@ -52,4 +64,14 @@ with_database <- function(runs, dbname = NULL, overwrite = FALSE) {
   dbDisconnect(conn)
 
   return(dbname)
+}
+
+has_index_SQLite <- function(conn, index_name) {
+  col_name <- str_c("index_", index_name)
+
+  tbl(conn, "sqlite_master") %>%
+    filter(name %like% col_name) %>%
+    count() %>%
+    collect() %>%
+    .[[1]] > 0
 }
