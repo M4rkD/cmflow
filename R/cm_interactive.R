@@ -575,16 +575,17 @@ with_simulate <- function(params,
   }
 
 
-  results <- bind_rows(results)
+  # default output contains info on the runs
+  output <- list(runs = bind_rows(results))
 
   if(db) {
-    create_database(results, output_dir)
+    create_database(output$runs, output_dir)
+
     # return a tibble which references database
-    store_tbl(output_dir)
-  } else {
-    results
+    output$dynamics <- store_tbl(output_dir)
   }
 
+  return(output)
 }
 
 #' Return simulation results directly
