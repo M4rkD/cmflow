@@ -197,10 +197,10 @@ params <- function(date_start, date_end, locations = NULL) {
   )
 }
 
-run_simulation <- function(params, run = 1, n = 1) {
+run_simulation <- function(params, run = 1, model_seed = 0) {
   "Runs the simulation, setting the runtime."
   start_time <- Sys.time()
-  result <- cm_simulate(params, run, 0)
+  result <- cm_simulate(params, run, model_seed)
   end_time <- Sys.time()
   result$runtime_seconds <- end_time - start_time
   result
@@ -530,6 +530,8 @@ with_simulate <- function(params,
   # of the runner function and the default
   # .func function
   force(params)
+  force(run)
+  force(model_seed)
 
   # If func is not hill
   if(!is.null(.vars) && is.null(.func)) {
@@ -544,7 +546,9 @@ with_simulate <- function(params,
     vars <- list(...)
     params$info$vars <- vars
 
-    result <- sim_action_run(params)
+    # every call to runner should have a run column
+    # seed every run with the index of the run
+    result <- run_simulation_safely(params, run, model_seed = run)
 
     save_file_to_uuid_location(output_dir, result, vars)
   }
@@ -553,7 +557,9 @@ with_simulate <- function(params,
     runner()
   } else {
     # ensure that every dataframe
-    # has a run column
+    # has a run column. The runner function
+    # depends on this. In particular, the run ID
+    # is also used to seed simulation runs.
     .vars %<>% add_column(run=1:dim(.vars)[[1]],
                           .before=names(.vars)[1])
 
@@ -567,8 +573,8 @@ with_simulate <- function(params,
 
 #' Return simulation results directly
 #' @export
-sim_action_run <- function(params) {
-  out <- safely(run_simulation)(params)
+run_simulation_safely <- function(params, run = 1, model_seed = 0) {
+  out <- safely(run_simulation)(params, run, model_seed)
   result <- out$result
   result$error <- out$error
   result
