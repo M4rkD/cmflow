@@ -15,8 +15,14 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
 Import:
     covidm,
-    data.table
-Suggests: 
+    data.table,
+    RSQLite
+    stringr,
+    tidyverse,
+    qs,
+    purrr,
+    furrr
+Suggests:
     testthat
 Depends: 
     R (>= 2.10)

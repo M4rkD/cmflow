@@ -524,7 +524,8 @@ with_run <- function(irun, .vars, .func) {
 with_simulate <- function(params,
                           output_dir,
                           .vars = NULL,
-                          .func = NULL) {
+                          .func = NULL,
+                          db = TRUE) {
 
   # params is used from this environment
   # of the runner function and the default
@@ -573,7 +574,17 @@ with_simulate <- function(params,
                            .progress = TRUE)
   }
 
-  bind_rows(results)
+
+  results <- bind_rows(results)
+
+  if(db) {
+    create_database(results, output_dir)
+    # return a tibble which references database
+    store_tbl(output_dir)
+  } else {
+    results
+  }
+
 }
 
 #' Return simulation results directly

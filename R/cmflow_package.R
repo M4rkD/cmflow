@@ -5,4 +5,5 @@
 #' @import furrr
 #' @import covidm
 #' @import data.table
+#' @import RSQLite
 NULL
