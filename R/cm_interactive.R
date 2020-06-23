@@ -523,7 +523,7 @@ with_run <- function(irun, .vars, .func) {
 #'
 #' @export
 with_simulate <- function(params,
-                          output_dir,
+                          output_dir = NULL,
                           .vars = NULL,
                           .func = function(params) params,
                           overwrite = FALSE) {
@@ -540,18 +540,32 @@ with_simulate <- function(params,
 
     # Set sweep vars
     vars <- list(...)
+
+    # put run back into vars
+    vars$run <- run
+
     params$info$vars <- vars
 
     # every call to runner should have a run column
     # seed every run with the index of the run
     result <- run_simulation(params, run, model_seed = run)
 
-    .save_file_to_uuid_location(output_dir, run, result, vars)
+    # note: output_dir = NULL is only allowed for
+    # when .vars it NULL (i.e. individual runs)
+    if(!is.null(output_dir)) {
+      .save_file_to_uuid_location(output_dir, result, vars)
+    } else {
+      result
+    }
   }
 
   if(is.null(.vars)) {
-    runner()
+    runner(run = 1)
   } else {
+    if(is.null(output_dir)) {
+      stop("Please provide output_dir when .vars is not NULL")
+    }
+
     # add_column requires a data frame, and vars is a function
     # in default R
     if(!is.data.frame(.vars)) {
@@ -566,27 +580,23 @@ with_simulate <- function(params,
                         run=1:dim(.vars)[[1]],
                         .before=names(.vars)[1])
 
-    results <- future_pmap(.vars,
-                           runner,
-                           .progress = TRUE)
+    future_pmap(.vars,
+                runner,
+                .progress = TRUE) %>%
+      bind_rows()
   }
-
-
-  # default output contains info on the runs
-  bind_rows(results)
-}
 }
 
-.save_file_to_uuid_location <- function(output_dir, run, result, vars) {
+.save_file_to_uuid_location <- function(output_dir, result, vars) {
   full_dir <- file.path(getwd(), output_dir, "results")
 
   ifelse(!dir.exists(full_dir), dir.create(full_dir, recursive = TRUE), FALSE)
 
-  result_filepath <- file.path(full_dir, paste0(run, ".rds"))
+  result_filepath <- file.path(full_dir, paste0(vars$run, ".rds"))
 
   qsave(result, result_filepath)
 
-  tibble(run = run, !!!vars, file = result_filepath)
+  tibble(!!!vars, file = result_filepath)
 }
 
 # ac_collect_dynamics <- function(vars, results) {
