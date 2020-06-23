@@ -201,9 +201,10 @@ run_simulation <- function(params, run = 1, model_seed = 0) {
   "Runs the simulation, setting the runtime."
   start_time <- Sys.time()
   result <- cm_simulate(params, run, model_seed)
-  end_time <- Sys.time()
-  result$runtime_seconds <- end_time - start_time
-  result
+
+  result$runtime_seconds <- Sys.time() - start_time
+
+  return(result)
 }
 
 #' Build 9-matrix default parameters from contact matrices
