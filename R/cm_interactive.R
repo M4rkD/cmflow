@@ -521,63 +521,60 @@ with_run <- function(irun, .vars, .func) {
 #'                                      })
 #'
 #' @export
-with_vars_run <- function(params,
-                          .vars,
-                          .func = function(params, ...) params,
-                          .action = ac_run) {
+with_simulate <- function(params,
+                          output_dir,
+                          .vars = NULL,
+                          .func = NULL) {
 
-  # Just in case...
+  # params is used from this environment
+  # of the runner function and the default
+  # .func function
   force(params)
 
-  future_pmap(.vars, function(...) {
-    # I don't think this is necessary here..
-    force(params)
-
+  # If func is not hill
+  if(!is.null(.vars) && is.null(.func)) {
+    stop("Must provide .func if .vars is provided")
+  }
+ 
+  runner <- function(...) {
     # Compute params by calling .func
     params <- .func(params, ...)
 
     # Set sweep vars
-    params$info$sweep_vars <- list(...)
+    vars <- list(...)
+    params$info$vars <- vars
 
-    # call the action
-    .action(params)
-  }, .progress = TRUE)
+    result <- sim_action_run(params)
+
+    save_file_to_uuid_location(output_dir, result, vars)
+  }
+
+  if(is.null(.vars)) {
+    runner()
+  } else {
+    # ensure that every dataframe
+    # has a run column
+    .vars$run <- 1:dim(.vars)[[1]]
+
+    results <- future_pmap(.vars,
+                           runner,
+                           params,
+                           .progress = TRUE)
+  }
+
+  bind_rows(results)
 }
 
+#' Return simulation results directly
 #' @export
-ac_run <- function(params) {
+sim_action_run <- function(params) {
   out <- safely(run_simulation)(params)
   result <- out$result
   result$error <- out$error
   result
 }
 
-
-#' Save simulation results to directory
-#'
-#' @param .vars data frame of values to run
-#' @param .func function of params, and the values of fields in
-#' the data frame. Should return a set of params for the run.
-#' @param action an action to perform on each run, should
-#' return the value for with_sweep to return
-#'
-#' @return list of result of action function on the result
-#' of the simulation. This will be the simulation results
-#' and error information by default.
-#
-#' @examples
-#' params9() %>% with_vars(df, function(params, R0) {
-#'                                        with_R0(paras, R0)
-#'                                      })
-#'
-#' @export
-ac_save_run_fs <- function(output_dir, params) {
-  result <- ac_run(params)
-
-  save_file_to_uuid_location(output_dir, result)
-}
-
-save_file_to_uuid_location <- function(output_dir, result) {
+save_file_to_uuid_location <- function(output_dir, result, vars) {
   full_dir <- file.path(getwd(), output_dir)
 
   ifelse(!dir.exists(full_dir), dir.create(full_dir), FALSE)
@@ -585,12 +582,10 @@ save_file_to_uuid_location <- function(output_dir, result) {
   result_uuid <- system("uuidgen", intern = T)
 
   result_filepath <- file.path(output_dir, paste0(result_uuid, "-result.rds"))
-  vars_filepath <- file.path(output_dir, paste0(result_uuid, "-params.rds"))
 
-  qsave(vars, vars_filepath)
   qsave(result, result_filepath)
 
-  result_uuid
+  tibble(!!!vars, file = result_filepath)
 }
 
 # ac_collect_dynamics <- function(vars, results) {
