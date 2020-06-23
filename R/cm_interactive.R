@@ -569,7 +569,7 @@ with_simulate <- function(params,
     # add_column requires a data frame, and vars is a function
     # in default R
     if(!is.data.frame(.vars)) {
-      stop(".vars should be a data frame")
+      stop("Please ensure that .vars is a data frame")
     }
 
     # ensure that every dataframe
