@@ -558,7 +558,6 @@ with_simulate <- function(params,
 
     results <- future_pmap(.vars,
                            runner,
-                           params,
                            .progress = TRUE)
   }
 
