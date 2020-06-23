@@ -534,11 +534,6 @@ with_simulate <- function(params,
   params <- .apply_schedule(params)
   force(params)
 
-  # If func is not hill
-  if(!is.null(.vars) && is.null(.func)) {
-    stop("Must provide .func if .vars is provided")
-  }
- 
   runner <- function(run, ...) {
     # Compute params by calling .func
     params <- .func(params, ...)
