@@ -524,7 +524,7 @@ with_run <- function(irun, .vars, .func) {
 with_simulate <- function(params,
                           output_dir,
                           .vars = NULL,
-                          .func = NULL,
+                          .func = function(params) params,
                           overwrite = FALSE) {
 
   # params is used from this environment
@@ -548,7 +548,7 @@ with_simulate <- function(params,
 
     # every call to runner should have a run column
     # seed every run with the index of the run
-    result <- run_simulation_safely(params, run, model_seed = run)
+    result <- run_simulation(params, run, model_seed = run)
 
     .save_file_to_uuid_location(output_dir, run, result, vars)
   }
@@ -579,14 +579,6 @@ with_simulate <- function(params,
   # default output contains info on the runs
   bind_rows(results)
 }
-
-#' Return simulation results directly
-#' @export
-run_simulation_safely <- function(params, run = 1, model_seed = 0) {
-  out <- safely(run_simulation)(params, run, model_seed)
-  result <- out$result
-  result$error <- out$error
-  result
 }
 
 .save_file_to_uuid_location <- function(output_dir, run, result, vars) {
