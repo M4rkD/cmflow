@@ -594,7 +594,7 @@ run_simulation_safely <- function(params, run = 1, model_seed = 0) {
 
   qsave(result, result_filepath)
 
-  tibble(!!!vars, file = result_filepath)
+  tibble(run = run, !!!vars, file = result_filepath)
 }
 
 # ac_collect_dynamics <- function(vars, results) {
