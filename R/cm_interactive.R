@@ -174,7 +174,14 @@ params <- function(date_start, date_end, locations = NULL) {
 run_simulation <- function(params, run = 1, model_seed = 0) {
   "Runs the simulation, setting the runtime."
   start_time <- Sys.time()
-  result <- cm_simulate(params, run, model_seed)
+
+  # cm_backend_simulate will cache results by default
+  # I get around this by always setting n=1
+  # and setting run to the value it should be
+  # outside of cm_simulate
+  result <- cm_simulate(params, n = 1, model_seed)
+
+  result$dynamics$run <- run
 
   result$runtime_seconds <- Sys.time() - start_time
 
