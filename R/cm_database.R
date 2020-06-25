@@ -36,14 +36,13 @@ get_store_directory <- function(files) {
 
 #' @export
 with_database <- function(output_dir, dbname = NULL, overwrite = FALSE) {
-
   if (is.null(dbname)) {
     dbname <- file.path(output_dir, "db.sqlite")
   } else if (file.exists(dbname) && !overwrite) {
     stop("Database exists")
   }
 
-  files = Sys.glob(file.path(output_dir, "results", "*"))
+  files <- Sys.glob(file.path(output_dir, "results", "*"))
 
   conn <- DBI::dbConnect(RSQLite::SQLite(), dbname = dbname)
 
@@ -59,7 +58,7 @@ with_database <- function(output_dir, dbname = NULL, overwrite = FALSE) {
       # add vars to dynamics, first removing run
       args <- results$base_parameters$info$vars
 
-      if(!unique(args$run) == unique(dynamics$run)) {
+      if (!unique(args$run) == unique(dynamics$run)) {
         stop("Discrepancy with run IDs")
       }
 
