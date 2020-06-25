@@ -22,7 +22,7 @@ store_dynamics <- function(conn, dynamics, run_id = NULL) {
 with_tbl <- function(dbname) {
   conn <- DBI::dbConnect(RSQLite::SQLite(), dbname = dbname)
 
-  tbl(conn, "dynamics")
+  dplyr::tbl(conn, "dynamics")
 }
 
 get_store_directory <- function(files) {
@@ -81,7 +81,7 @@ with_database <- function(output_dir, dbname = NULL, overwrite = FALSE) {
 has_index_SQLite <- function(conn, index_name) {
   col_name <- str_c("index_", index_name)
 
-  tbl(conn, "sqlite_master") %>%
+  dplyr::tbl(conn, "sqlite_master") %>%
     filter(name %like% col_name) %>%
     count() %>%
     collect() %>%
